@@ -13,7 +13,7 @@ class CdkNetworkBasicStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
     
         #define aws account details and name of the repo
-        account='905781841335'
+        account='XXX'
         region = 'us-east-1'
 
         # The code that defines your stack goes here
@@ -46,7 +46,7 @@ class CdkNetworkBasicStack(Stack):
                     cidr_mask=26
                 )
             ],
-            nat_gateways=1,
+            nat_gateways=1
         )
 
         #create new security group and allow all outbound traffic (enabled by default)
