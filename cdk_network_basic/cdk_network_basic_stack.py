@@ -14,7 +14,7 @@ class CdkNetworkBasicStack(Stack):
     
         #define aws account details and name of the repo
         account='XXX'
-        region = 'us-east-1'
+        region = 'XX'
 
         # The code that defines your stack goes here
 
