@@ -95,7 +95,12 @@ class CdkNetworkBasicStack(Stack):
             assumed_by=iam.ServicePrincipal('codedeploy.amazonaws.com'),
         )
 
-        ServiceRole.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name("AWSCodeDeployRole"))
+        ServiceRole.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(
+                                        self,
+                                        id='service-id',
+                                        managed_policy_arn="arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+                                        )
+        )
 
         EC2Role = iam.Role(
             self,
@@ -103,5 +108,10 @@ class CdkNetworkBasicStack(Stack):
             role_name='CodeDeploy-EC2',
             assumed_by=iam.ServicePrincipal('ec2.amazonaws.com'),
         )
-
-        EC2Role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name("AmazonEC2RoleforAWSCodeDeploy"))
+        
+        EC2Role.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(
+                                    self,
+                                    id='ec2-id',
+                                    managed_policy_arn="arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"
+                                    )
+        )
