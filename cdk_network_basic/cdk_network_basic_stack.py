@@ -1,10 +1,11 @@
 from email.headerregistry import Group
 from unicodedata import name
 from aws_cdk import (
-    # Duration,
+    Duration,
     Stack,
     aws_ec2 as ec2,
-    aws_iam as iam
+    aws_iam as iam,
+    aws_elasticloadbalancingv2 as elb
     # aws_sqs as sqs,
 )
 from constructs import Construct
@@ -13,21 +14,21 @@ class CdkNetworkBasicStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
-    
-        #define aws account details and name of the repo
+
+# GLOBAL CONFIG  
+        # Global variables (if any)
         account='XXX'
         region = 'XX'
 
-        # The code that defines your stack goes here
-
-       #lookup for an existing vpc
+# NETWORK 
+       # Lookup for an existing vpc
         vpc = ec2.Vpc.from_lookup(
             self,
             'VPC',
             is_default=True
         )
 
-        #create new vpc
+        # Create new VPC
         vpc2 = ec2.Vpc(
             self, 
             id='devops-vpc',
@@ -38,12 +39,12 @@ class CdkNetworkBasicStack(Stack):
             enable_dns_support=True,
             subnet_configuration=[
                 ec2.SubnetConfiguration(
-                    name='DevOps-PUBLIC', 
+                    name='DevOps-PUBLIC-', 
                     subnet_type=ec2.SubnetType.PUBLIC,
                     cidr_mask=26
                 ),
                 ec2.SubnetConfiguration(
-                    name='DevOps-PRIVATE',
+                    name='DevOps-PRIVATE-',
                     subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT,
                     cidr_mask=26
                 )
@@ -51,7 +52,8 @@ class CdkNetworkBasicStack(Stack):
             nat_gateways=1
         )
 
-        #create new security group and allow all outbound traffic (enabled by default)
+# SECURITY
+        # Create global security group + add inbound rules
         securitygroup = ec2.SecurityGroup(
             self, 
             'web-access-devops',
@@ -60,7 +62,6 @@ class CdkNetworkBasicStack(Stack):
             security_group_name="WEB-SSH-VPN-JENKINS"
         )
 
-        #add inbound rules to newly created SG
         securitygroup.add_ingress_rule(
             ec2.Peer.any_ipv4(),
             ec2.Port.tcp(80),
@@ -87,7 +88,8 @@ class CdkNetworkBasicStack(Stack):
             description='Allow traffic through port 943 - VPN'
         )
 
-        #create new roles for codedeploy: ServiceRole > AWSCodeDeployRole (AWS managed) | EC2 > 
+# IDENTITY
+        # Create new roles for codedeploy: ServiceRole > AWSCodeDeployRole (AWS managed) | EC2 > 
         ServiceRole = iam.Role(
             self,
             'CodeDeploy-Service',
@@ -123,4 +125,73 @@ class CdkNetworkBasicStack(Stack):
             roles=["CodeDeploy-EC2"]
         ) 
 
+# EC2 LOAD BALANCER
+        # Create new target group - TG1 private
+        tg1 = elb.ApplicationTargetGroup(
+            self,
+            id="id-tg-gorito-priv",
+            target_group_name="gorito-private",
+            vpc=vpc2,
+            port=80,
+            target_type=elb.TargetType.INSTANCE,
+            deregistration_delay=Duration.seconds(10),
+            protocol=elb.ApplicationProtocol.HTTP
+        )
 
+        # Create new target group - TG2 public
+        tg2 = elb.ApplicationTargetGroup(
+            self,
+            id="id-tg-gorito-pub",
+            target_group_name="gorito-public",
+            vpc=vpc2,
+            port=80,
+            target_type=elb.TargetType.INSTANCE,
+            deregistration_delay=Duration.seconds(10),
+            protocol=elb.ApplicationProtocol.HTTP
+        )
+
+        # Create public ELB1
+        lb = elb.ApplicationLoadBalancer(
+            self,
+            id="id_elb_devops_pub",
+            load_balancer_name="web-public",
+            vpc=vpc2,
+            internet_facing=True,
+            security_group=securitygroup
+        )
+
+        # Create private ELB2
+        lb2 = elb.ApplicationLoadBalancer(
+            self,
+            id="id_elb_devops_priv",
+            load_balancer_name="web-private",
+            vpc=vpc2,
+            internet_facing=False,
+            security_group=securitygroup
+        )
+
+        # Configure listener for ELB1
+        listener=lb.add_listener(
+            id="id-listener-web",
+            port=80,
+            open=True
+        )
+
+        # Configure listener for ELB2
+        listener2=lb2.add_listener(
+            id="id-listener-web",
+            port=80,
+            open=True
+        )
+
+        # Append TG2 to ELB1 - PUBLIC
+        listener.add_target_groups(
+            id="id_elb_listener_tg2",
+            target_groups=[tg2]
+        )
+
+        # Append TG1 to ELB2 - PRIVATE
+        listener2.add_target_groups(
+            id="id_elb_listener_tg1",
+            target_groups=[tg1]
+        )
