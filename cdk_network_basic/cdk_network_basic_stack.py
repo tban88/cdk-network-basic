@@ -111,11 +111,12 @@ class CdkNetworkBasicStack(Stack):
             assumed_by=iam.ServicePrincipal('ec2.amazonaws.com')
         )   
 
-        EC2Role.add_managed_policy(iam.ManagedPolicy.from_managed_policy_arn(
-                                    self,
-                                    id='ec2-policy',
-                                    managed_policy_arn="arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"
-                                    )
+        EC2Role.add_managed_policy(
+            iam.ManagedPolicy.from_managed_policy_arn(
+                self,
+                id='ec2-policy',
+                managed_policy_arn="arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"
+            )
         )
 
         InstanceProfile = iam.CfnInstanceProfile(
