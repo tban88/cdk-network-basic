@@ -1,8 +1,10 @@
+from email.headerregistry import Group
 from unicodedata import name
 from aws_cdk import (
     # Duration,
     Stack,
-    aws_ec2 as ec2
+    aws_ec2 as ec2,
+    aws_iam as iam
     # aws_sqs as sqs,
 )
 from constructs import Construct
@@ -84,3 +86,22 @@ class CdkNetworkBasicStack(Stack):
             ec2.Port.tcp(943),
             description='Allow traffic through port 943 - VPN'
         )
+
+        #create new roles for codedeploy: ServiceRole > AWSCodeDeployRole (AWS managed) | EC2 > 
+        ServiceRole = iam.Role(
+            self,
+            'CodeDeploy-Service',
+            role_name='CodeDeploy-ServiceRole',
+            assumed_by=iam.ServicePrincipal('codedeploy.amazonaws.com'),
+        )
+
+        ServiceRole.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name("AWSCodeDeployRole"))
+
+        EC2Role = iam.Role(
+            self,
+            'CodeDeploy-EC2',
+            role_name='CodeDeploy-EC2',
+            assumed_by=iam.ServicePrincipal('ec2.amazonaws.com'),
+        )
+
+        EC2Role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name("AmazonEC2RoleforAWSCodeDeploy"))
