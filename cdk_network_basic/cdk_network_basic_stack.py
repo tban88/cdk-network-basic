@@ -19,6 +19,7 @@ class CdkNetworkBasicStack(Stack):
         # Global variables (if any)
         account='XXX'
         region = 'XX'
+        ports = {"HTTPS":443, "HTTP":80, "SSL":22, "JENKINS":8080, "VPN":943}
 
 # NETWORK 
        # Lookup for an existing vpc
@@ -62,34 +63,15 @@ class CdkNetworkBasicStack(Stack):
             security_group_name="WEB-SSH-VPN-JENKINS"
         )
 
-        securitygroup.add_ingress_rule(
-            ec2.Peer.any_ipv4(),
-            ec2.Port.tcp(80),
-            description='Allow traffic through port 80 - HTTP'
-        )
-        securitygroup.add_ingress_rule(
-            ec2.Peer.any_ipv4(),
-            ec2.Port.tcp(443),
-            description='Allow traffic through port 443 - HTTPS'
-        )
-        securitygroup.add_ingress_rule(
-            ec2.Peer.any_ipv4(),
-            ec2.Port.tcp(22),
-            description='Allow traffic through port 22 - SSH'
-        )
-        securitygroup.add_ingress_rule(
-            ec2.Peer.any_ipv4(),
-            ec2.Port.tcp(8080),
-            description='Allow traffic through port 8080 - Jenkins'
-        )
-        securitygroup.add_ingress_rule(
-            ec2.Peer.any_ipv4(),
-            ec2.Port.tcp(943),
-            description='Allow traffic through port 943 - VPN'
-        )
+        for name in ports:
+            securitygroup.add_ingress_rule(
+             ec2.Peer.any_ipv4(),
+             ec2.Port.tcp(int(ports[name])),
+             description="Allows traffic through port {port} - {app}".format(port=ports[name], app=name)
+            ) 
 
 # IDENTITY
-        # Create new roles for codedeploy: ServiceRole > AWSCodeDeployRole (AWS managed) | EC2 > 
+        # Create new roles for codedeploy: ServiceRole > AWSCodeDeployRole (AWS managed) | EC2 > AmazonEC2RoleforAWSCodeDeploy (AWS managed)
         ServiceRole = iam.Role(
             self,
             'CodeDeploy-Service',
