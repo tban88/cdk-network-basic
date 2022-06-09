@@ -20,7 +20,7 @@ class CdkNetworkBasicStack(Stack):
         ports = {"HTTPS":443, "HTTP":80, "SSL":22, "JENKINS":8080, "VPN":943}
 
 # NETWORK 
-       # Lookup for an existing vpc
+       # Lookup for an existing default vpc and save it just in VPN case 
         vpc = ec2.Vpc.from_lookup(
             self,
             'VPC',
