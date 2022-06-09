@@ -17,8 +17,6 @@ class CdkNetworkBasicStack(Stack):
 
 # GLOBAL CONFIG  
         # Global variables (if any)
-        account='XXX'
-        region = 'XX'
         ports = {"HTTPS":443, "HTTP":80, "SSL":22, "JENKINS":8080, "VPN":943}
 
 # NETWORK 
@@ -32,20 +30,20 @@ class CdkNetworkBasicStack(Stack):
         # Create new VPC
         vpc2 = ec2.Vpc(
             self, 
-            id='devops-vpc',
-            vpc_name="devops-vpc",
+            id='DEVOPS-VPN',
+            vpc_name="DEVOPS-VPN",
             cidr='10.10.10.0/24',
             max_azs=2,
             enable_dns_hostnames=True,
             enable_dns_support=True,
             subnet_configuration=[
                 ec2.SubnetConfiguration(
-                    name='DevOps-PUBLIC-', 
+                    name='DEVOPS-PUBLIC-', 
                     subnet_type=ec2.SubnetType.PUBLIC,
                     cidr_mask=26
                 ),
                 ec2.SubnetConfiguration(
-                    name='DevOps-PRIVATE-',
+                    name='DEVOPS-PRIVATE-',
                     subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT,
                     cidr_mask=26
                 )
@@ -57,7 +55,7 @@ class CdkNetworkBasicStack(Stack):
         # Create global security group + add inbound rules
         securitygroup = ec2.SecurityGroup(
             self, 
-            'web-access-devops',
+            'WEB-ACCESS-DEVOPS',
             vpc=vpc2, 
             allow_all_outbound=True,
             security_group_name="WEB-SSH-VPN-JENKINS"
